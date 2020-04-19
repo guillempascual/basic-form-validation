@@ -5,11 +5,22 @@ const password = document.getElementById('password');
 const password2 = document.getElementById('password2');
 
 // show input error message
+function deleteErrors(allInputs) {
+  allInputs.forEach(item => {
+    const formControl = item.parentElement;
+    formControl.className = 'form-control error';
+    const small = formControl.querySelector('small');
+    small.innerText = '';
+  });
+
+}
+
+// show input error message
 function showError(username, message) {
   const formControl = username.parentElement;
   formControl.className = 'form-control error';
   const small = formControl.querySelector('small');
-  small.innerText = message;
+  small.innerText = small.innerText + ' ' + message;
 }
 // show input success message
 function showSuccess(username, message) {
@@ -26,69 +37,84 @@ function getFieldName(input) {
   return input.id.charAt(0).toUpperCase() + input.id.slice(1);
 }
 
-function checkRequired(inputArray) {
-  let success = true;
-  inputArray.forEach(input => {
-    if (input.value.trim() === '') {
-      showError(input, `${getFieldName(input)} is required`)
-      success = success && false;
-    }
-    else {
-      showSuccess(input);
+function checkRequired(allInputs, errors) {
+  allInputs.forEach(item => {
+    if (item.value.trim() === '') {
+      errors.push({
+        'input': item,
+        'type': 'required',
+        'message': `${getFieldName(item)} is required`
+      });
     }
   });
-  return success;
+  return errors;
 }
 
-
-function checkLength(input, min, max) {
-  let success = true;
+function checkLength(input, min, max, errors) {
   if ((input.value.length < min) || (input.value.length > max)) {
-    showError(input, `${getFieldName(input)} must be between ${min} and ${max} characters`)
-    success = false;
+    errors.push({
+      'input': input,
+      'type': 'length',
+      'message': `${getFieldName(input)} must be between ${min} and ${max} characters`
+    })
   }
-  else {
-    showSuccess(input);
-  }
-  return success;
+  return errors;
 }
 
-function checkEmail(input) {
-  let success = true;
+function checkEmail(input, errors) {
   if (!isEmailValid(input.value)) {
-    showError(input, `${getFieldName(input)} is not valid`)
-    success = false;
+    errors.push({
+      'input': input,
+      'type': 'email',
+      'message': `${getFieldName(input)} is not valid`
+    })
   }
-  else {
-    showSuccess(input);
-  }
-  return success;
+  return errors;
 }
 
-function checkPasswordsMatch(input1, input2) {
-  let success = true;
+function checkPasswordsMatch(input1, input2, errors) {
   if (input1.value !== input2.value) {
-    showError(input2, `Passwords don't match`)
-    success = false;
+    errors.push({
+      'input': input2,
+      'type': 'passwords_match',
+      'message': `Passwords don't match`
+    })
   }
-  else {
-    showSuccess(input2);
-  }
-  return success;
+  return errors;
+}
+
+function showErrors(allInputs, errors) {
+  allInputs.forEach(item => {
+    const results = errors.filter(({ input }) => input.id === item.id);
+    if (results.length > 0) {
+      results.forEach(result => {
+        //console.log(result.input.id, result.message)
+        showError(item, result.message);
+      });
+    }
+    else {
+      showSuccess(item);
+    }
+  });
 }
 
 // Events listeners
 form.addEventListener('submit', (e) => {
   e.preventDefault();
+  deleteErrors([username, email, password, password2]);
+  let errors = [];
+  errors = checkRequired([username, email, password, password2], errors);
+  errors = checkLength(username, 3, 15, errors);
+  errors = checkLength(password, 3, 15, errors);
+  errors = checkEmail(email, errors);
+  errors = checkPasswordsMatch(password, password2, errors);
 
-  if (checkRequired([username, email, password, password2]) &&
-    checkLength(username, 3, 15) &&
-    checkLength(password, 3, 15) &&
-    checkEmail(email) &&
-    checkPasswordsMatch(password, password2)) {
-    console.log('submitted!!');
-  }
-  else {
+  showErrors([username, email, password, password2], errors);
+
+  if (errors.length > 0) {
     console.log('not submitted!!')
+  } else {
+    console.log('submitted!!');
+    form.submit();
   }
 })
