@@ -4,30 +4,6 @@ const email = document.getElementById('email');
 const password = document.getElementById('password');
 const password2 = document.getElementById('password2');
 
-// show input error message
-function deleteErrors(allInputs) {
-  allInputs.forEach(item => {
-    const formControl = item.parentElement;
-    formControl.className = 'form-control error';
-    const small = formControl.querySelector('small');
-    small.innerText = '';
-  });
-
-}
-
-// show input error message
-function showError(username, message) {
-  const formControl = username.parentElement;
-  formControl.className = 'form-control error';
-  const small = formControl.querySelector('small');
-  small.innerText = small.innerText + ' ' + message;
-}
-// show input success message
-function showSuccess(username, message) {
-  const formControl = username.parentElement;
-  formControl.className = 'form-control success';
-}
-
 function isEmailValid(email) {
   var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   return re.test(String(email).toLowerCase());
@@ -83,34 +59,59 @@ function checkPasswordsMatch(input1, input2, errors) {
   return errors;
 }
 
-function showErrors(allInputs, errors) {
+function showInputError(username, message) {
+  const formControl = username.parentElement;
+  formControl.className = 'form-control error';
+  const small = formControl.querySelector('small');
+  small.innerHTML = small.innerText + '<br> ' + message;
+}
+
+function showInputSuccess(username, message) {
+  const formControl = username.parentElement;
+  formControl.className = 'form-control success';
+}
+
+function showErrorsInForm(allInputs, errors) {
   allInputs.forEach(item => {
     const results = errors.filter(({ input }) => input.id === item.id);
     if (results.length > 0) {
       results.forEach(result => {
         //console.log(result.input.id, result.message)
-        showError(item, result.message);
+        showInputError(item, result.message);
       });
     }
     else {
-      showSuccess(item);
+      showInputSuccess(item);
     }
   });
 }
 
-// Events listeners
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-  deleteErrors([username, email, password, password2]);
+function resetErrorsInForm(allInputs) {
+  allInputs.forEach(item => {
+    const formControl = item.parentElement;
+    formControl.className = 'form-control error';
+    const small = formControl.querySelector('small');
+    small.innerText = '';
+  });
+
+}
+
+function validateForm() {
   let errors = [];
+  resetErrorsInForm([username, email, password, password2]);
   errors = checkRequired([username, email, password, password2], errors);
   errors = checkLength(username, 3, 15, errors);
   errors = checkLength(password, 3, 15, errors);
   errors = checkEmail(email, errors);
   errors = checkPasswordsMatch(password, password2, errors);
+  showErrorsInForm([username, email, password, password2], errors);
+  return errors;
+}
 
-  showErrors([username, email, password, password2], errors);
-
+// Events listeners
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  let errors = validateForm();
   if (errors.length > 0) {
     console.log('not submitted!!')
   } else {
